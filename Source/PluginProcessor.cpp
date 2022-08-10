@@ -241,7 +241,8 @@ void RtconvolveAudioProcessor::setStateInformation (const void* data, int sizeIn
     juce::File ir(impulseResponseFilePath);
     AudioFormatManager manager;
     manager.registerBasicFormats();
-    juce::ScopedPointer<AudioFormatReader> formatReader = manager.createReaderFor(ir);
+    // juce::ScopedPointer<AudioFormatReader> formatReader = manager.createReaderFor(ir);
+    std::unique_ptr<juce::AudioFormatReader> formatReader{ manager.createReaderFor(ir) };
     AudioSampleBuffer sampleBuffer(formatReader->numChannels, formatReader->lengthInSamples);
     formatReader->read(&sampleBuffer, 0, formatReader->lengthInSamples, 0, 1, 1);
     setImpulseResponse(sampleBuffer, impulseResponseFilePath);
