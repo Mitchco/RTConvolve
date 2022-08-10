@@ -15,12 +15,25 @@
 
 //==============================================================================
 RtconvolveAudioProcessor::RtconvolveAudioProcessor()
- : mSampleRate(0.0)
- , mBufferSize(0)
- , mImpulseResponseFilePath("")
+
+#ifndef JucePlugin_PreferredChannelConfigurations
+    : AudioProcessor(BusesProperties()
+#if ! JucePlugin_IsMidiEffect
+#if ! JucePlugin_IsSynth
+        .withInput("Input", juce::AudioChannelSet::stereo(), true)
+#endif
+        .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+#endif
+    )//,
+#endif
+    , mSampleRate(0.0)
+    , mBufferSize(0)
+    , mImpulseResponseFilePath("")
+
 {
-    
+
 }
+
 
 RtconvolveAudioProcessor::~RtconvolveAudioProcessor()
 {
@@ -115,30 +128,57 @@ void RtconvolveAudioProcessor::releaseResources()
 {
 }
 
+//#ifndef JucePlugin_PreferredChannelConfigurations
+//bool RtconvolveAudioProcessor::setPreferredBusArrangement (bool isInput, int bus, const AudioChannelSet& preferredSet)
+//{
+//    // Reject any bus arrangements that are not compatible with your plugin
+//
+//    const int numChannels = preferredSet.size();
+//
+//   #if JucePlugin_IsMidiEffect
+//    if (numChannels != 0)
+//        return false;
+//   #elif JucePlugin_IsSynth
+//    if (isInput || (numChannels != 1 && numChannels != 2))
+//        return false;
+//   #else
+//    if (numChannels != 1 && numChannels != 2)
+//        return false;
+//
+//    if (! AudioProcessor::setPreferredBusArrangement (! isInput, bus, preferredSet))
+//        return false;
+//   #endif
+//
+//    return AudioProcessor::setPreferredBusArrangement (isInput, bus, preferredSet);
+//}
+//#endif
+
+
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool RtconvolveAudioProcessor::setPreferredBusArrangement (bool isInput, int bus, const AudioChannelSet& preferredSet)
+bool RtconvolveAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
-    // Reject any bus arrangements that are not compatible with your plugin
-
-    const int numChannels = preferredSet.size();
-
-   #if JucePlugin_IsMidiEffect
-    if (numChannels != 0)
-        return false;
-   #elif JucePlugin_IsSynth
-    if (isInput || (numChannels != 1 && numChannels != 2))
-        return false;
-   #else
-    if (numChannels != 1 && numChannels != 2)
+#if JucePlugin_IsMidiEffect
+    juce::ignoreUnused(layouts);
+    return true;
+#else
+    // This is the place where you check if the layout is supported.
+    // In this template code we only support mono or stereo.
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
+        && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
-    if (! AudioProcessor::setPreferredBusArrangement (! isInput, bus, preferredSet))
+    // This checks if the input layout matches the output layout
+#if ! JucePlugin_IsSynth
+    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
-   #endif
+#endif
 
-    return AudioProcessor::setPreferredBusArrangement (isInput, bus, preferredSet);
+    return true;
+#endif
 }
 #endif
+
+
 
 void RtconvolveAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
@@ -194,7 +234,8 @@ void RtconvolveAudioProcessor::getStateInformation (MemoryBlock& destData)
 
 void RtconvolveAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    juce::ScopedPointer<XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
+    // juce::ScopedPointer<XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
+    std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
 
     String impulseResponseFilePath = xml->getStringAttribute("impulseResponseFilePath", "");
     juce::File ir(impulseResponseFilePath);
@@ -204,6 +245,7 @@ void RtconvolveAudioProcessor::setStateInformation (const void* data, int sizeIn
     AudioSampleBuffer sampleBuffer(formatReader->numChannels, formatReader->lengthInSamples);
     formatReader->read(&sampleBuffer, 0, formatReader->lengthInSamples, 0, 1, 1);
     setImpulseResponse(sampleBuffer, impulseResponseFilePath);
+
 }
 
 //==============================================================================

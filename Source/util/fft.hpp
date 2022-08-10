@@ -9,7 +9,8 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-static double log2( double n )  
+// static double log2( double n )
+inline double log2(double n)
 {  
     // log(n)/log(2) is log2.  
     return log( n ) / log( 2 );  
@@ -26,7 +27,7 @@ void fft(T *REX, T *IMX, unsigned int N)
 	unsigned int LE, LE2;
 	unsigned int IP;
 	int j = ND2;
-	int i, l;	/* Loop counters */
+	int i, l;	/* Loop counters */ 
 	int jm1;
 	T TR, TI, UR, UI, SR, SI;
 

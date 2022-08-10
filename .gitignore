@@ -1,0 +1,4 @@
+﻿*.pbxproj
+Builds/MacOSX
+Builds
+JuceLibraryCode
